@@ -1,4 +1,5 @@
 from gensim.models import word2vec
+from RandomVec import RandomVec
 import numpy as np
 import random
 import pickle as pkl
@@ -6,7 +7,7 @@ import sys
 WORD_DIM = 300
 FILE_NAME = raw_input("enter filename : ")
 model = word2vec.Word2Vec.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
-
+rvec = RandomVec(WORD_DIM)
 
 def findMaxLenght():
 	temp = 0
@@ -73,13 +74,9 @@ def get_input():
 			sentence_length += 1
 
 			try:
-				word.append(model[line.split()[0]][:WORD_DIM])
+				word.append(model[line.split()[0]])
 			except:
-				random.seed(seed_unknown(line.split()[0]))
-#				print "not in vocab"
-
-				noob = [random.random() for _ in xrange(WORD_DIM)]
-				word.append(noob)
+				word.append(rvec.getVec(line.split()[0]))
 
 			t = line.split()[3]
 
@@ -101,9 +98,10 @@ def get_input():
 				sys.exit(0)
 
 	assert(len(sentence) == len(sentence_tag))
-	print sentence_tag[0]
-	pkl.dump(sentence,open('s','w'))
-	pkl.dump(sentence_tag,open('s_tag','w'))
+	#print sentence_tag[0]
+	print "pickling"
+	pkl.dump(sentence,open('5cls_50seq_test_wvec','wb'))
+	pkl.dump(sentence_tag,open('5cls_50seq_test_tag','wb'))
 
 get_input()
 

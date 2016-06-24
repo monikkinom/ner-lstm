@@ -11,13 +11,13 @@ def get_dummy_data(num):
     return emb,tag
 
 def get_train_data():
-    emb = pickle.load(open('strain','rb'))
-    tag = pickle.load(open('straintag','rb'))
+    emb = pickle.load(open('5cls_50seq_train_wvec','rb'))
+    tag = pickle.load(open('5cls_50seq_train_tag','rb'))
     return emb,tag
 
 def get_test_data():
-    emb = pickle.load(open('s50test','rb'))
-    tag = pickle.load(open('s50testtag','rb'))
+    emb = pickle.load(open('5cls_50seq_test_wvec','rb'))
+    tag = pickle.load(open('5cls_50seq_test_tag','rb'))
     return emb,tag
 
 
