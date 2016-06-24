@@ -54,19 +54,13 @@ class Model():
             fw_cell = rnn_cell.MultiRNNCell([fw_cell] * self._num_layers)
             bw_cell = rnn_cell.MultiRNNCell([bw_cell] * self._num_layers)
 
-        x = tf.transpose(self.data, [1, 0, 2])
-        x = tf.reshape(x, [-1, 1])
-        x = tf.split(0, MAX_SEQ_LEN, x)
-
-        output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, x, dtype=tf.float32, sequence_length=self.length)
-
+        output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length)
         max_length = int(self.target.get_shape()[1])
         num_classes = int(self.target.get_shape()[2])
         weight, bias = self._weight_and_bias(2*self._num_hidden, num_classes)
-        output = tf.pack(output)
-        output = tf.reshape(output,[-1, 2*self._num_hidden])
+        output = tf.reshape(tf.transpose(tf.pack(output), perm=[1, 0, 2]), [-1, 2*self._num_hidden])
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
-        prediction = tf.reshape(prediction,[-1, max_length, num_classes])
+        prediction = tf.reshape(prediction, [-1, max_length, num_classes])
         return prediction
 
 
@@ -188,9 +182,11 @@ def train(args):
         for epoch in range(100):
             ptr=0
             for _ in range(no_of_batches):
+                print "here"
                 batch_inp, batch_out = train_inp[ptr:ptr+BATCH_SIZE], train_out[ptr:ptr+BATCH_SIZE]
                 ptr += BATCH_SIZE
                 sess.run(model.optimize,{data: batch_inp, target : batch_out, dropout: 0.5})
+                print "ehrehre"
             if epoch % 10 == 0:
                 save_path = saver.save(sess, "model.ckpt")
                 print("Model saved in file: %s" % save_path)
