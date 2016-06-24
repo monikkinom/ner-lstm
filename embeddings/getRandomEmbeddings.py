@@ -1,11 +1,11 @@
-from RandomVec import RandomVec
 import numpy as np
 import random
 import pickle as pkl
 import sys
+from RandomVec import RandomVec
 WORD_DIM = 300
-FILE_NAME = raw_input("enter filename : ")
 model = RandomVec(WORD_DIM)
+FILE_NAME = raw_input("enter filename : ")
 
 def findMaxLenght():
 	temp = 0
@@ -20,17 +20,6 @@ def findMaxLenght():
 			temp += 1
 
 	return max_lenght 
-
-def seed_unknown(st):
-	assert(len(st) > 0)
-
-	if len(st) == 1:
-		return ord(st)
-	else:
-		ans = 1
-		for i in range(len(st)):
-			ans *= ord(st[i])
-		return ans
 
 def get_input():
 	word = []
@@ -62,18 +51,10 @@ def get_input():
 		else:
 			assert(len(line.split()) == 4)
 			sentence_length += 1
-
-			try:
-				word.append(model.getVec(line.split()[0]))
-			except:
-				random.seed(seed_unknown(line.split()[0]))
-
-				noob = [random.random() for _ in xrange(WORD_DIM)]
-				word.append(noob)
-
+			word.append(model.getVec(line.split()[0]))
 			t = line.split()[3]
 
-			# Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
+			# Five classes 0-None,1-Person,2-Location,3 Organisation,4-Misc
 
 			if t.endswith('O'):
 				tag.append(np.array([1, 0, 0, 0, 0]))
@@ -92,7 +73,7 @@ def get_input():
 
 	assert(len(sentence) == len(sentence_tag))
 	print sentence_tag[0]
-	pkl.dump(sentence,open('s','w'))
-	pkl.dump(sentence_tag,open('s_tag','w'))
+	pkl.dump(sentence,open('5cls_50seq_test_rvec','wb'))
+	pkl.dump(sentence_tag,open('5cls_50seq_test_tag','wb'))
 
 get_input()
