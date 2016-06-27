@@ -47,9 +47,6 @@ class Model():
         bw_cell = rnn_cell.LSTMCell(self._num_hidden)
         bw_cell = rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=self.dropout)
 
-        fw_cell = rnn_cell.MultiRNNCell([fw_cell] * 2)
-        bw_cell = rnn_cell.MultiRNNCell([bw_cell] * 2)
-
         if self._num_layers > 1:
             fw_cell = rnn_cell.MultiRNNCell([fw_cell] * self._num_layers)
             bw_cell = rnn_cell.MultiRNNCell([bw_cell] * self._num_layers)
