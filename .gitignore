@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+#Specific stuff
+*.pyc
+pickles/
+embeddings/50train
+embeddings/50test

@@ -72,7 +72,7 @@ def get_input():
 				sys.exit(0)
 
 	assert(len(sentence) == len(sentence_tag))
-	print sentence_tag[0]
+	print 'pickling'
 	pkl.dump(sentence,open('5cls_50seq_test_rvec','wb'))
 	pkl.dump(sentence_tag,open('5cls_50seq_test_tag','wb'))
 

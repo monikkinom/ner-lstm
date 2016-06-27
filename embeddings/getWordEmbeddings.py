@@ -6,7 +6,7 @@ import pickle as pkl
 import sys
 WORD_DIM = 300
 FILE_NAME = raw_input("enter filename : ")
-model = word2vec.Word2Vec.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
+model = word2vec.Word2Vec.load_word2vec_format('../pickles/GoogleNews-vectors-negative300.bin', binary=True)
 rvec = RandomVec(WORD_DIM)
 
 def findMaxLenght():
