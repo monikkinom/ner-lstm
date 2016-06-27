@@ -13,7 +13,7 @@ WORD_DIM = 300
 MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
 BATCH_SIZE = 64
-NUM_HIDDEN = 128
+NUM_HIDDEN = 256
 NUM_LAYERS = 1
 NUM_EPOCH = 1000
 
@@ -42,17 +42,25 @@ class Model():
 
     @lazy_property
     def prediction(self):
-        network = rnn_cell.LSTMCell(self._num_hidden)
-        network = rnn_cell.DropoutWrapper(network, output_keep_prob=self.dropout)
+        fw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        fw_cell = rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=self.dropout)
+        bw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        bw_cell = rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=self.dropout)
+
+        fw_cell = rnn_cell.MultiRNNCell([fw_cell] * 2)
+        bw_cell = rnn_cell.MultiRNNCell([bw_cell] * 2)
+
         if self._num_layers > 1:
-            network = rnn_cell.MultiRNNCell([network] * self._num_layers)
-        output, state = rnn.dynamic_rnn(network, self.data, dtype=tf.float32, sequence_length=self.length)
+            fw_cell = rnn_cell.MultiRNNCell([fw_cell] * self._num_layers)
+            bw_cell = rnn_cell.MultiRNNCell([bw_cell] * self._num_layers)
+
+        output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length)
         max_length = int(self.target.get_shape()[1])
         num_classes = int(self.target.get_shape()[2])
-        weight, bias = self._weight_and_bias(self._num_hidden, num_classes)
-        output = tf.reshape(output,[-1, self._num_hidden])
+        weight, bias = self._weight_and_bias(2*self._num_hidden, num_classes)
+        output = tf.reshape(tf.transpose(tf.pack(output), perm=[1, 0, 2]), [-1, 2*self._num_hidden])
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
-        prediction = tf.reshape(prediction,[-1, max_length, num_classes])
+        prediction = tf.reshape(prediction, [-1, max_length, num_classes])
         return prediction
 
 
@@ -150,11 +158,11 @@ def f1(prediction,target,length):
 
 def train(args):
 
-    train_inp, train_out = get_train_data()
+    train_inp, train_out = get_dummy_data(2000)
     print "train data loaded"
     no_of_batches = len(train_inp) / BATCH_SIZE
 
-    test_inp, test_out = get_test_data()
+    test_inp, test_out = get_dummy_data(1000)
     print "test data loaded"
 
 
@@ -173,9 +181,11 @@ def train(args):
         for epoch in range(100):
             ptr=0
             for _ in range(no_of_batches):
+                print "here"
                 batch_inp, batch_out = train_inp[ptr:ptr+BATCH_SIZE], train_out[ptr:ptr+BATCH_SIZE]
                 ptr += BATCH_SIZE
                 sess.run(model.optimize,{data: batch_inp, target : batch_out, dropout: 0.5})
+                print "ehrehre"
             if epoch % 10 == 0:
                 save_path = saver.save(sess, "model.ckpt")
                 print("Model saved in file: %s" % save_path)
