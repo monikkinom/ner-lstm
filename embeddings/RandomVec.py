@@ -1,4 +1,5 @@
 import numpy as np
+from random import random
 
 class RandomVec():
 
@@ -10,7 +11,7 @@ class RandomVec():
 	def getVec(self, word):
 		ind = self.vocab.get(word, -1)
 		if ind == -1:
-			nvec = np.random.random((self.dim))
+			nvec = [random() for i in range(self.dim)]
 			self.vocab[word] = len(self.vocab)
 			self.vec.append(nvec)
 			return nvec

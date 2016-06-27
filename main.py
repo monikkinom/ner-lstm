@@ -15,7 +15,7 @@ NUM_CLASSES = 5
 BATCH_SIZE = 64
 NUM_HIDDEN = 128
 NUM_LAYERS = 1
-NUM_EPOCH = 100
+NUM_EPOCH = 1000
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -77,7 +77,6 @@ class Model():
 
     @lazy_property
     def optimize(self):
-        learning_rate = 0.003
         optimizer = tf.train.AdamOptimizer()
         return optimizer.minimize(self.cost)
 
