@@ -6,7 +6,7 @@ import pickle as pkl
 import sys
 WORD_DIM = 300
 FILE_NAME = raw_input("enter filename : ")
-model = word2vec.Word2Vec.load_word2vec_format('../pickles/GoogleNews-vectors-negative300.bin', binary=True)
+model = word2vec.Word2Vec.load_word2vec_format('../../../ner-lstm/embeddings/GoogleNews-vectors-negative300.bin', binary=True)
 rvec = RandomVec(WORD_DIM)
 
 def findMaxLenght():
@@ -23,16 +23,43 @@ def findMaxLenght():
 
 	return max_lenght 
 
-def seed_unknown(st):
-	assert(len(st) > 0)
+def pos(tag):
 
-	if len(st) == 1:
-		return ord(st)
+	onehot = np.zeros(5)
+	if tag == 'NN' or tag == 'NNS':
+		onehot[0] = 1
+	elif tag == 'FW':
+		onehot[1] = 1
+	elif tag == 'NNP' or tag == 'NNPS':
+		onehot[2] = 1
+	elif 'VB' in tag:
+		onehot[3] = 1
 	else:
-		ans = 1
-		for i in range(len(st)):
-			ans *= ord(st[i])
-		return ans
+		onehot[4] = 1
+
+	return onehot
+
+def chunk(tag):
+	
+	onehot = np.zeros(5)
+	if 'NP' in tag:
+		onehot[0] = 1
+	elif 'VP' in tag:
+		onehot[1] = 1
+	elif 'PP' in tag:
+		onehot[2] = 1
+	elif tag == 'O':
+		onehot[3] = 1
+	else:
+		onehot[4] = 1
+
+	return onehot
+
+def capital(word):
+	if ord(word[0]) >= 'A' and ord(word[0]) <= 'Z':
+		return np.array([1])
+	else:
+		return np.array([0])
 
 
 def get_input():
@@ -54,7 +81,7 @@ def get_input():
 #	print "aa"	
 			for _ in range(max_sentence_length - sentence_length):
 				tag.append(np.array([0,0,0,0,0]))
-				temp = [0 for _ in range(WORD_DIM)]
+				temp = [0 for _ in range(WORD_DIM + 11)]
 				word.append(temp)
 				
 			
@@ -74,10 +101,16 @@ def get_input():
 			sentence_length += 1
 
 			try:
-				word.append(model[line.split()[0]])
+				temp = model[line.split()[0]]
+				#word.append(model[line.split()[0]])
 			except:
-				word.append(rvec.getVec(line.split()[0]))
+				temp = rvec.getVec(line.split()[0])
+				#word.append(rvec.getVec(line.split()[0]))
+			temp  = np.append(temp,pos(line.split()[1])) # adding pos embeddings
+			temp = np.append(temp,chunk(line.split()[2])) # adding chunk embeddings
+			temp = np.append(temp,capital(line.split()[0])) # adding capital embedding
 
+			word.append(temp)
 			t = line.split()[3]
 
 			# Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
