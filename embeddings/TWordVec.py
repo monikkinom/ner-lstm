@@ -28,11 +28,11 @@ class TrigramIndex:
 		return self.tri[trigram]
 
 	def triList(self, word, inPlace = []):
-		word = '#' + word + '#'
+		word = '#' + word.lower() + '#'
 		tl = []
 		for i in range(len(word) - 2):
 			trigram = word[i : i + 3]
-			ti = self.tri[trigram]
+			ti = self.tri.get(trigram, 0)
 			if len(inPlace) != 0:
 				inPlace[:, ti] += 1
 			else:
@@ -100,11 +100,12 @@ class WordVec:
 	def genVec(self, word):
 		ind = self.trigrams.triList(word)
 		embedding = np.sum(self.triVec[ind, :], axis = 0)
-		norm = np.linalg.norm(embedding)
+		norm = 1
+		#norm = np.linalg.norm(embedding)
 		return embedding.reshape(-1) / norm
 
 	def loadVec(self):
-		self.triVec = np.load('TrigramVectors.npy')
+		self.triVec = np.load('TrigramVectors100.npy')
 
 	def similarity(self, word1, word2):
 		vec1 = self.genVec(word1)
@@ -122,9 +123,8 @@ class WordVec:
 			embed = tf.matmul(trainInputs, embeddings)
 			nceWeights = tf.Variable(tf.truncated_normal([len(self.corpus.vocab), dim],stddev=1.0 / math.sqrt(dim)))
 			nceBiases = tf.Variable(tf.zeros([len(self.corpus.vocab)]))
-			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embed, trainLabels, 64, len(self.corpus.vocab)))
+			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embed, trainLabels, 128, len(self.corpus.vocab)))
 			optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
-			norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
 		with tf.Session(graph = graph) as sess:
 			saver = tf.train.Saver()
 			tf.initialize_all_variables().run()
@@ -148,26 +148,22 @@ class WordVec:
 					pkl.dump(self.corpus.worPtr, open('backCorpus.pkl', 'wb'))
 					pkl.dump(i, open('backEPOCH.pkl', 'wb'))
 					print('Saved Everything.')
-			tembed = embeddings.eval()
-		self.triVec = tembed
-		np.save('TrigramVectors.npy', tembed)
-
-	def visual(self):
-		tsne = TSNE(perplexity = 30, n_components = 2, init = 'pca', n_iter = 5000)
-		lowdim = tsne.fit_transform(self.triVec[:len(self.corpus.mostCommon)])
-		plt.scatter(lowdim[:, 0], lowdim[:, 1])
-		for i in range(len(self.corpus.mostCommon)):
-			plt.annotate(self.corpus.mostCommon[i], lowdim[i])
-		plt.show()
+			self.triVec = embeddings.eval()
+		np.save('TrigramVectors.npy', self.triVec)
 
 def main():	
-	corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/text8')
-	if restore:
-		corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
-		print('Restored Corpus state.')
-	wvec = WordVec(corpus)
-	#wvec.visual()
-	wvec.train(300, 10000, 10)
+	#corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/text8')
+	#if restore:
+	#	corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
+	#	print('Restored Corpus state.')
+	numList = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'zero']
+	wvec = WordVec()
+	s = 0
+	for i in numList:
+		for j in numList:
+			s = s + wvec.similarity(i, j)
+	print(s / 100)
+	#wvec.train(100, 10000, 10)
 
 if __name__ == '__main__':
 	restore = input('Restore:')

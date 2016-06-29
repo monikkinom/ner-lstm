@@ -3,7 +3,7 @@ import numpy as np
 import random
 import pickle as pkl
 import sys
-WORD_DIM = 300
+WORD_DIM = 100
 FILE_NAME = raw_input("enter filename : ")
 model = WordVec()
 
@@ -22,16 +22,43 @@ def findMaxLenght():
 
 	return max_lenght 
 
-def seed_unknown(st):
-	assert(len(st) > 0)
+def pos(tag):
 
-	if len(st) == 1:
-		return ord(st)
+	onehot = np.zeros(5)
+	if tag == 'NN' or tag == 'NNS':
+		onehot[0] = 1
+	elif tag == 'FW':
+		onehot[1] = 1
+	elif tag == 'NNP' or tag == 'NNPS':
+		onehot[2] = 1
+	elif 'VB' in tag:
+		onehot[3] = 1
 	else:
-		ans = 1
-		for i in range(len(st)):
-			ans *= ord(st[i])
-		return ans
+		onehot[4] = 1
+
+	return onehot
+
+def chunk(tag):
+	
+	onehot = np.zeros(5)
+	if 'NP' in tag:
+		onehot[0] = 1
+	elif 'VP' in tag:
+		onehot[1] = 1
+	elif 'PP' in tag:
+		onehot[2] = 1
+	elif tag == 'O':
+		onehot[3] = 1
+	else:
+		onehot[4] = 1
+
+	return onehot
+
+def capital(word):
+	if ord(word[0]) >= 'A' and ord(word[0]) <= 'Z':
+		return np.array([1])
+	else:
+		return np.array([0])
 
 
 def get_input():
@@ -50,16 +77,11 @@ def get_input():
 
 	for line in open(FILE_NAME):
 		if line in ['\n', '\r\n']:
-#	print "aa"	
 			for _ in range(max_sentence_length - sentence_length):
 				tag.append(np.array([0,0,0,0,0]))
-				temp = [0 for _ in range(WORD_DIM)]
+				temp = [0 for _ in range(WORD_DIM+11)]
 				word.append(temp)
 				
-			
-#			assert (len(word) == 113)
-#			assert (len(tag) == 113)
-
 			sentence.append(word)
 			sentence_tag.append(np.array(tag))
 
@@ -72,15 +94,12 @@ def get_input():
 			assert(len(line.split()) == 4)
 			sentence_length += 1
 
-			try:
-				word.append(model.genVec(line.split()[0]))
-			except:
-				random.seed(seed_unknown(line.split()[0]))
-#				print "not in vocab"
+			temp = model.genVec(line.split()[0])
+			temp = np.append(temp,pos(line.split()[1])) # adding pos embeddings
+			temp = np.append(temp,chunk(line.split()[2])) # adding chunk embeddings
+			temp = np.append(temp,capital(line.split()[0])) # adding capital embedding
 
-				noob = [random.random() for _ in xrange(WORD_DIM)]
-				word.append(noob)
-
+			word.append(temp)
 			t = line.split()[3]
 
 			# Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
@@ -101,9 +120,9 @@ def get_input():
 				sys.exit(0)
 
 	assert(len(sentence) == len(sentence_tag))
-	print sentence_tag[0]
-	pkl.dump(sentence,open('s','w'))
-	pkl.dump(sentence_tag,open('s_tag','w'))
+	print 'pickling'
+	pkl.dump(sentence,open('5cls_50seq_train_tvecext','wb'))
+	#pkl.dump(sentence_tag,open('s_tag','w'))
 
 get_input()
 
