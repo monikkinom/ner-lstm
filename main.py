@@ -14,8 +14,8 @@ MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
 BATCH_SIZE = 64
 NUM_HIDDEN = 256
-NUM_LAYERS = 1
-NUM_EPOCH = 1000
+NUM_LAYERS = 2
+NUM_EPOCH = 100
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -155,11 +155,11 @@ def f1(prediction,target,length):
 
 def train(args):
 
-    train_inp, train_out = get_dummy_data(2000)
+    train_inp, train_out = get_train_data()
     print "train data loaded"
     no_of_batches = len(train_inp) / BATCH_SIZE
 
-    test_inp, test_out = get_dummy_data(1000)
+    test_inp, test_out = get_test_data()
     print "test data loaded"
 
 
@@ -178,11 +178,9 @@ def train(args):
         for epoch in range(100):
             ptr=0
             for _ in range(no_of_batches):
-                print "here"
                 batch_inp, batch_out = train_inp[ptr:ptr+BATCH_SIZE], train_out[ptr:ptr+BATCH_SIZE]
                 ptr += BATCH_SIZE
                 sess.run(model.optimize,{data: batch_inp, target : batch_out, dropout: 0.5})
-                print "ehrehre"
             if epoch % 10 == 0:
                 save_path = saver.save(sess, "model.ckpt")
                 print("Model saved in file: %s" % save_path)

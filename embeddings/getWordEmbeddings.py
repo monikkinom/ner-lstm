@@ -6,7 +6,7 @@ import pickle as pkl
 import sys
 WORD_DIM = 300
 FILE_NAME = raw_input("enter filename : ")
-model = word2vec.Word2Vec.load_word2vec_format('../../../ner-lstm/embeddings/GoogleNews-vectors-negative300.bin', binary=True)
+model = word2vec.Word2Vec.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
 rvec = RandomVec(WORD_DIM)
 
 def findMaxLenght():
@@ -133,8 +133,8 @@ def get_input():
 	assert(len(sentence) == len(sentence_tag))
 	#print sentence_tag[0]
 	print "pickling"
-	pkl.dump(sentence,open('5cls_50seq_test_wvec','wb'))
-	pkl.dump(sentence_tag,open('5cls_50seq_test_tag','wb'))
+	pkl.dump(sentence,open('5cls_50seq_test_wvecext','wb'))
+	#pkl.dump(sentence_tag,open('5cls_50seq_train_tag','wb'))
 
 get_input()
 
