@@ -26,11 +26,11 @@ We have used a softmax layer as the last layer of the network to produce the fin
 
 The function to calculate the F1 Scores, Prediction, Accuracy and Recall is also included in main.py. We have also included the ability to save/restore an existing model using tensorflow's saver functions.
 
-###Input
+####Input
 
 input.py contains the code that loads the embeddings for the words in the CoNLL test and train datasets. It has three functions and a dummy function to test if the network works. The embeddings are first generated using the files in the embedding folder and stored as pickle files. The input is then read from the pickle file and loaded during the training and prediction. The input should return a list of sequences of word embeddings.
 
-###Embeddings
+####Embeddings
 Each unique word should have certain number of features, these are called embeddings or also vectors. These are the input features to the neural architecture we are using.
 
 We experimented with different embeddings and observed the results.
