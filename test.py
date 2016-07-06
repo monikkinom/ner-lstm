@@ -4,7 +4,7 @@ import functools
 import random
 import argparse
 
-from input import get_train_data,get_test_data,get_final_data
+from input import get_final_data
 
 from tensorflow.models.rnn import rnn_cell
 from tensorflow.models.rnn import rnn
@@ -15,7 +15,6 @@ NUM_CLASSES = 5
 BATCH_SIZE = 128
 NUM_HIDDEN = 350
 NUM_LAYERS = 2
-NUM_EPOCH = 2000
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -109,6 +108,31 @@ class Model():
     def getpredf1(self):
         return self.prediction,self.length
 
+def pfunc(num):
+    if num == 0:
+        return 'O'
+    elif num == 1:
+        return 'PER'
+    elif num == 2:
+        return 'LOC'
+    elif num == 3:
+        return 'ORG'
+    elif num == 4:
+        return 'MISC'
+
+def fw(prediction,target,length):
+    tp=np.array([0]*(NUM_CLASSES+2))
+    fp=np.array([0]*(NUM_CLASSES+2))
+    fn=np.array([0]*(NUM_CLASSES+2))
+
+    target = np.argmax(target, 2)
+    prediction = np.argmax(prediction, 2)
+
+    f = open('results', 'w')
+    for i in range(len(target)):
+        for j in range(length[i]):
+            f.write(str(pfunc(target[i][j])) + " " + str(pfunc(prediction[i][j])) + "\n")
+	f.write('\n')
 
 def f1(prediction,target,length):
     tp=np.array([0]*(NUM_CLASSES+2))
@@ -146,22 +170,14 @@ def f1(prediction,target,length):
         recall.append(tp[i]*1.0/(tp[i]+ fn[i]))
         fscore.append(2.0*precision[i]*recall[i]/(precision[i]+recall[i]))
 
-    #print "precision = " ,precision
-    #print "recall = " ,recall
-    #print "f1score = " ,fscore
-    
-    print "Entity fscore :", fscore[5]    
-    return fscore[5]
+    print "precision = " ,precision
+    print "recall = " ,recall
+    print "f1score = " ,fscore
+
+    print "Entity fscore :", fscore[5]
 
 
-def train(args):
-
-    train_inp, train_out = get_train_data()
-    print "train data loaded"
-    no_of_batches = len(train_inp) / BATCH_SIZE
-
-    test_inp, test_out = get_test_data()
-    print "test data loaded"
+def train():
 
     final_inp, final_out = get_final_data()
     print "final data loaded"
@@ -170,41 +186,15 @@ def train(args):
     target = tf.placeholder(tf.float32, [None, MAX_SEQ_LEN, NUM_CLASSES])
     dropout = tf.placeholder(tf.float32)
     model = Model(data,target,dropout,NUM_HIDDEN,NUM_LAYERS)
-    maximum = 0
 
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         saver = tf.train.Saver()
-        if args.restore is not None:
-            saver.restore(sess, 'model.ckpt')
-            print "last model restored"
+        saver.restore(sess, 'model_max.ckpt')
 
-        for epoch in range(NUM_EPOCH):
-            ptr=0
-            for _ in range(no_of_batches):
-                batch_inp, batch_out = train_inp[ptr:ptr+BATCH_SIZE], train_out[ptr:ptr+BATCH_SIZE]
-                ptr += BATCH_SIZE
-                sess.run(model.optimize,{data: batch_inp, target : batch_out, dropout: 0.5})
-            if epoch % 10 == 0:
-                save_path = saver.save(sess, "model.ckpt")
-                print("Model saved in file: %s" % save_path)
-                
-            pred = sess.run(model.prediction, {data: test_inp, target: test_out, dropout: 1})
-            pred,length = sess.run(model.getpredf1, {data: test_inp, target: test_out, dropout: 1})
-            print "Epoch:" + str(epoch), "TestA score,"
-            m = f1(pred,test_out,length)
-            if m > maximum:
-                maximum = m
-                save_path = saver.save(sess, "model_max.ckpt")
-                print("Max Model saved in file: %s" % save_path)
-                pred = sess.run(model.prediction, {data: final_inp, target: final_out, dropout: 1})
-                pred,length = sess.run(model.getpredf1, {data: final_inp, target: final_out, dropout: 1})
-                print "TestB score,"
-                f1(pred,final_out,length)
+        pred = sess.run(model.prediction, {data: final_inp, target: final_out, dropout: 1})
+        pred,length = sess.run(model.getpredf1, {data: final_inp, target: final_out, dropout: 1})
+        f1(pred,final_out,length)
 
 if __name__ == '__main__' :
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--restore', type=str, default=None,
-                       help="hi")
-    args = parser.parse_args()
-    train(args)
+    train()

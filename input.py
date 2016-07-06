@@ -11,15 +11,19 @@ def get_dummy_data(num):
     return emb,tag
 
 def get_train_data():
-    emb = pickle.load(open('5cls_50seq_train_rvec','rb'))
-    tag = pickle.load(open('5cls_50seq_train_tag','rb'))
+    emb = pickle.load(open('50_train_wtvec','rb'))
+    tag = pickle.load(open('50_train_tag','rb'))
     return emb,tag
 
 def get_test_data():
-    emb = pickle.load(open('5cls_50seq_test_rvec','rb'))
-    tag = pickle.load(open('5cls_50seq_test_tag','rb'))
+    emb = pickle.load(open('50_testa_wtvec','rb'))
+    tag = pickle.load(open('50_testa_tag','rb'))
     return emb,tag
 
+def get_final_data():
+    emb = pickle.load(open('50_testb_wtvec','rb'))
+    tag = pickle.load(open('50_testb_tag','rb'))
+    return emb,tag
 
 def get_indi_data():
     emb = pickle.load(open('t','rb'))

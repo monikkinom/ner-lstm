@@ -1,12 +1,13 @@
-from TWordVec import WordVec
+from gensim.models import word2vec
+from RandomVec import RandomVec
 import numpy as np
 import random
 import pickle as pkl
 import sys
-WORD_DIM = 100
+WORD_DIM = 300
 FILE_NAME = raw_input("enter filename : ")
-model = WordVec()
-
+model = word2vec.Word2Vec.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
+rvec = RandomVec(WORD_DIM)
 
 def findMaxLenght():
 	temp = 0
@@ -77,11 +78,16 @@ def get_input():
 
 	for line in open(FILE_NAME):
 		if line in ['\n', '\r\n']:
+#	print "aa"	
 			for _ in range(max_sentence_length - sentence_length):
 				tag.append(np.array([0,0,0,0,0]))
-				temp = [0 for _ in range(WORD_DIM+11)]
+				temp = [0 for _ in range(WORD_DIM + 11)]
 				word.append(temp)
 				
+			
+#			assert (len(word) == 113)
+#			assert (len(tag) == 113)
+
 			sentence.append(word)
 			sentence_tag.append(np.array(tag))
 
@@ -94,8 +100,13 @@ def get_input():
 			assert(len(line.split()) == 4)
 			sentence_length += 1
 
-			temp = model.genVec(line.split()[0])
-			temp = np.append(temp,pos(line.split()[1])) # adding pos embeddings
+			try:
+				temp = model[line.split()[0]]
+				#word.append(model[line.split()[0]])
+			except:
+				temp = rvec.getVec(line.split()[0])
+				#word.append(rvec.getVec(line.split()[0]))
+			temp  = np.append(temp,pos(line.split()[1])) # adding pos embeddings
 			temp = np.append(temp,chunk(line.split()[2])) # adding chunk embeddings
 			temp = np.append(temp,capital(line.split()[0])) # adding capital embedding
 
@@ -120,9 +131,10 @@ def get_input():
 				sys.exit(0)
 
 	assert(len(sentence) == len(sentence_tag))
-	print 'pickling'
-	pkl.dump(sentence,open('5cls_50seq_final_tvecext','wb'))
-	#pkl.dump(sentence_tag,open('s_tag','w'))
+	#print sentence_tag[0]
+	print "pickling"
+	pkl.dump(sentence,open('5cls_50seq_final_wvecext','wb'))
+	pkl.dump(sentence_tag,open('5cls_50seq_final_tag','wb'))
 
 get_input()
 
