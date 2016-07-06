@@ -54,3 +54,35 @@ Papers on WordVectors:
 https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf
 http://www-personal.umich.edu/~ronxin/pdf/w2vexp.pdf
 Good tutorial on WordVectors:https://www.tensorflow.org/versions/r0.9/tutorials/word2vec/index.html
+
+###Results(Ran on CONLL eval script):
+
+**Word2Vec 311 dimensions**
+---------------------------
+*Testa*
+-------
+processed 49644 tokens with 8211 phrases; found: 8080 phrases; correct: 7619.
+
+Accuracy = 98.54%
+
+Class | Precission | Recall | FB1 | Numbers
+--- | --- | --- | --- | ---
+*NER* | 94.29 | 92.79 | 93.54 | 8080
+*LOC* | 94.86 | 94.25 | 94.56 | 2023
+*MISC* | 91.99 | 85.09 | 88.40 | 1123
+*ORG* | 91.98 | 89.76 | 90.86 | 2020
+*PER* | 96.40 | 97.16 | 96.78 | 2914
+
+*Testb*
+-------
+processed 45151 tokens with 7719 phrases; found: 7740 phrases; correct: 6911.
+
+Accuracy = 97.49%
+
+Class | Precission | Recall | FB1 | Numbers
+--- | --- | --- | --- | ---
+*NER* | 89.29 | 89.53 | 89.41 | 7740
+*LOC* | 89.67 | 90.87 | 90.27 | 1898
+*MISC* | 75.80 | 75.80 | 75.80 | 905
+*ORG* | 88.03 | 87.27 | 87.65 | 2415
+*PER* | 95.04 | 95.69 | 95.37 | 2522
