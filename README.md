@@ -41,9 +41,14 @@ WordVectors:Dimensions=300
 TrigramVectors:Dimensions=300
 
 TWordVec.py generates the Trigram Vectors from a supplied Corpus(Cleaned and Removed punctuations and is just a list of words separated by spaces)
-getRandomEmbeddings.py generated the pickled embedding file for random vectors.
-getWordEmbeddings.py generated the pickled embedding file for random vectors.
-getTriEmbeddings.py generated the pickled embedding file for random vectors.
+We used a corpus of tensorflow + Open american national library + some random clippings total amounting to 290mb of raw text data(File contating just words separated by spaces).
+We need to supply the max word length to the TWordVec to generate the trigram embeddings.
+
+We are using these embeddings to generate the input features of CONLL-2003 NER TASK DATA(Train, Test and Development).
+getRandomEmbeddings.py generates the pickled embedding file for random vectors.
+getWordEmbeddings.py generates the pickled embedding file for Word vectors.
+getTriEmbeddings.py generates the pickled embedding file for Trigram vectors.
+After the respective pickles are generated the input.py can sends these pickles to main.py when called.
 
 Papers on WordVectors:
 https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf
