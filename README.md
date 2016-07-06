@@ -13,12 +13,12 @@ This project can be broadly divided into three components, the deep learning mod
 We have used Google's Tensorflow to implement a bidirectional multilayered rnn cell (LSTM). The hyper parameters are present at the top in main.py. Tweaking the parameters can yield a variety of results which are worth noting.
 
 ```python
-WORD_DIM = 300
+WORD_DIM = 311
 MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
 BATCH_SIZE = 64
 NUM_HIDDEN = 256
-NUM_LAYERS = 2
+NUM_LAYERS = 3
 NUM_EPOCH = 100
 ```
 
@@ -39,6 +39,8 @@ Random Vectors, WordVectors made by Google inc and our new generated trigram emb
 Random Vectors:Dimensions=300
 WordVectors:Dimensions=300
 TrigramVectors:Dimensions=300
+We are using extra 11 lexical and other features like Capital adding up to 300+11=311
+Final dimensions=311
 
 TWordVec.py generates the Trigram Vectors from a supplied Corpus(Cleaned and Removed punctuations and is just a list of words separated by spaces)
 We used a corpus of tensorflow + Open american national library + some random clippings total amounting to 290mb of raw text data(File contating just words separated by spaces).
@@ -51,8 +53,11 @@ getTriEmbeddings.py generates the pickled embedding file for Trigram vectors.
 After the respective pickles are generated the input.py can sends these pickles to main.py when called.
 
 Papers on WordVectors:
+
 https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf
+
 http://www-personal.umich.edu/~ronxin/pdf/w2vexp.pdf
+
 Good tutorial on WordVectors:https://www.tensorflow.org/versions/r0.9/tutorials/word2vec/index.html
 
 ###Results(Ran on CONLL eval script):
