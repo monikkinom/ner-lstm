@@ -63,10 +63,10 @@ def removeCrap():
 		else:
 			l.append(a[i])
 
-	ff = open('nocraptest','w')
+	ff = open('nocraptestf','w')
 	ff.writelines(l)
 
-#removeCrap()
+removeCrap()
 
 
 def modifyDataSize():
@@ -75,7 +75,7 @@ def modifyDataSize():
 	l = list()
 	temp = 0	
 	count = 0
-	for line in open(FILE_NAME):
+	for line in open('nocraptestf', 'r'):
 		if line in ['\n', '\r\n']:
 			if temp == 0:
 				l = []
@@ -92,12 +92,12 @@ def modifyDataSize():
 			l.append(line)
 			temp += 1
 
-	f = open("50test",'w')
+	f = open("50testb",'w')
 	print len(final_list)
 	for i in final_list:
 		f.writelines(i)
 	print final_list[0:5]
-#modifyDataSize()
+modifyDataSize()
 
 
 def firstFewSentences():

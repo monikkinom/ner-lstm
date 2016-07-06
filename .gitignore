@@ -90,7 +90,8 @@ ENV/
 
 #Specific stuff
 *.pyc
+*.npy
+*.ckpt
+*.meta
+*.pkl
 pickles/
-embeddings/50train
-embeddings/50test
-embeddings/TrigramVectors100.npy
