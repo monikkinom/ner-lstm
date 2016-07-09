@@ -104,12 +104,12 @@ class WordVec:
 		words = ''.join(word).split()
 		ind = []
 		for word in words:
-			ind = ind + self.trigrams.triList(word, self.mwl)
+			ind += list(self.trigrams.triList(word, self.mwl))
 		embedding = np.sum(self.triVec[ind, :], axis = 0)
 		return embedding.reshape(-1)
 
 	def loadVec(self):
-		self.triVec = np.load('TrigramVectors100.npy')
+		self.triVec = np.load('TrigramVectors300.npy')
 
 	def similarity(self, word1, word2):
 		vec1 = self.genVec(word1)
@@ -122,19 +122,24 @@ class WordVec:
 	def train(self, dim, batchSize, epoch):
 		graph = tf.Graph()
 		triSize = len(self.trigrams.tri)
+		zind = [0]
 		with graph.as_default():
 			trainInputs = tf.placeholder(tf.int64, shape=[batchSize, self.mwl - 2])
 			trainLabels = tf.placeholder(tf.int64, shape=[batchSize, 1])
 			embeddings = tf.Variable(tf.random_uniform([triSize, dim], -1.0, 1.0))
+			zeros = tf.zeros([1, dim], dtype = tf.float32)
+			zeroindices = tf.constant(zind, dtype = tf.int32)
+			setz = tf.scatter_update(embeddings, zeroindices, zeros)
 			embedlook = tf.nn.embedding_lookup(embeddings, trainInputs)
 			embed = tf.reduce_sum(embedlook, 1)
 			nceWeights = tf.Variable(tf.truncated_normal([len(self.corpus.vocab), dim],stddev=1.0 / math.sqrt(dim)))
 			nceBiases = tf.Variable(tf.zeros([len(self.corpus.vocab)]))
 			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embed, trainLabels, 256, len(self.corpus.vocab)))
-			optimizer = tf.train.GradientDescentOptimizer(0.01).minimize(loss)
+			optimizer = tf.train.GradientDescentOptimizer(.003).minimize(loss)
 		with tf.Session(graph = graph) as sess:
 			saver = tf.train.Saver()
 			tf.initialize_all_variables().run()
+			sess.run(setz)
 			i = 0
 			if restore:
 				saver.restore(sess, 'backModel.ckpt')
@@ -145,6 +150,7 @@ class WordVec:
 			while i < total:
 				[batch, label] = self.corpus.nextBatch(batchSize, 5, 2)
 				_, lossVal = sess.run([optimizer, loss], feed_dict = {trainInputs:batch, trainLabels:label})
+				sess.run(setz)
 				lossAvg = lossAvg + lossVal
 				i = i + 1
 				if i % 1000 == 0:
@@ -157,21 +163,25 @@ class WordVec:
 					self.triVec = embeddings.eval()
 					np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)	
 					print('Saved Everything.')
-		np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)
+			self.triVec = embeddings.eval()
+			np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)
 
 def main():	
-	corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/Corpus.txt')
-	if restore:
-		corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
-		print('Restored Corpus state.')
-	#numList = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'zero']
-	wvec = WordVec(corpus)
-	#s = 0
-	#for i in numList:
-	#	for j in numList:
-	#		s = s + wvec.similarity(i, j)
-	#print(s / 100)
-	wvec.train(300, 2000, 5)
+	#corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/Corpus.txt')
+	#if restore:
+	#	corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
+	#	print('Restored Corpus state.')
+	numList = ['zero', 'one', 'two', 'three', 'four', 'six', 'seven', 'eight', 'nine']
+	wvec = WordVec()
+	s = 0
+	no = 0
+	for i in numList:
+		for j in numList:
+			if i != j:
+				s = s + wvec.similarity(i, j)
+				no = no  + 1
+	print(s / no)
+	#wvec.train(300, 1000, 3)
 
 if __name__ == '__main__':
 	restore = input('Restore:')

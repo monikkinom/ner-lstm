@@ -4,11 +4,10 @@ import random
 import pickle as pkl
 import sys
 WORD_DIM = 100
-FILE_NAME = raw_input("enter filename : ")
 model = WordVec()
 
 
-def findMaxLenght():
+def findMaxLenght(FILE_NAME):
 	temp = 0
 	max_lenght = 0
 
@@ -61,7 +60,7 @@ def capital(word):
 		return np.array([0])
 
 
-def get_input():
+def get_input(FILE_NAME, op, optag):
 	word = []
 	tag = []
 
@@ -69,7 +68,7 @@ def get_input():
 	sentence_tag = []
 
 	#get max words in sentence
-	max_sentence_length = findMaxLenght()
+	max_sentence_length = findMaxLenght(FILE_NAME)
 	sentence_length = 0
 
 	print "size is : " + str(max_sentence_length)
@@ -121,8 +120,14 @@ def get_input():
 
 	assert(len(sentence) == len(sentence_tag))
 	print 'pickling'
-	pkl.dump(sentence,open('5cls_50seq_final_tvecext','wb'))
-	#pkl.dump(sentence_tag,open('s_tag','w'))
+	pkl.dump(sentence,open(op,'wb'))
+	pkl.dump(sentence_tag,open(optag,'wb'))
 
-get_input()
+train = raw_input("enter train file")
+testa = raw_input("enter testa file")
+testb = raw_input("enter testb file")
+
+get_input(train,'50_train_tvec','50_train_tag')
+get_input(testa,'50_testa_tvec','50_testa_tag')
+get_input(testb,'50_testb_tvec','50_testb_tag')
 

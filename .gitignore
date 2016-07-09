@@ -94,4 +94,6 @@ ENV/
 *.ckpt
 *.meta
 *.pkl
+50*
 pickles/
+data/
