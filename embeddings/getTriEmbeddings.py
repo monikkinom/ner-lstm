@@ -3,7 +3,7 @@ import numpy as np
 import random
 import pickle as pkl
 import sys
-WORD_DIM = 100
+WORD_DIM = 300
 model = WordVec()
 
 

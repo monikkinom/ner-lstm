@@ -10,13 +10,12 @@ class TensorCorpus:
 		self.worPtr = 0
 		self.vocab = {}
 		self.mostCommon = []
-		self.data = open(fName, 'r').read()
-		self.data = self.data.split()
-		self.vocabBuilder(100000)
+		self.data = open(fName, 'r').read().split(u' ')
+		self.vocabBuilder(300000)
 		print('Corpus Initialized.')
 
 	def vocabBuilder(self, size):
-		count = [['UNK', 0]]
+		count = [[u'UNK', 0]]
 		count.extend(collections.Counter(self.data).most_common(size - 1))
 		for word, _ in count:
 			self.vocab[word] = len(self.vocab)
@@ -81,7 +80,7 @@ class WordVec:
 			embedlook = tf.nn.embedding_lookup(embeddings, trainInputs)
 			nceWeights = tf.Variable(tf.truncated_normal([vocabSize, dim],stddev=1.0 / math.sqrt(dim)))
 			nceBiases = tf.Variable(tf.zeros([vocabSize]))
-			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embedlook, trainLabels, 256, vocabSize))
+			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embedlook, trainLabels, 128, vocabSize))
 			optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
 		with tf.Session(graph = graph) as sess:
 			saver = tf.train.Saver()
@@ -112,7 +111,7 @@ class WordVec:
 			np.save('WordVectors' + str(dim) + '.npy', self.vec)
 
 def main():	
-	corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/Corpus.txt')
+	corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/HINDI.txt')
 	if restore:
 		corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
 		print('Restored Corpus state.')
@@ -127,7 +126,7 @@ def main():
 	#			no = no  + 1
 	#print(s / no)
 	#print(wvec.triVec[0])
-	wvec.train(300, 10000, 3)
+	wvec.train(300, 10000, 35)
 
 if __name__ == '__main__':
 	restore = input('Restore:')

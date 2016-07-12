@@ -9,12 +9,12 @@ from input import get_train_data,get_test_data,get_final_data
 from tensorflow.models.rnn import rnn_cell
 from tensorflow.models.rnn import rnn
 
-WORD_DIM = 411
+WORD_DIM = 311
 MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
 BATCH_SIZE = 128
-NUM_HIDDEN = 350
-NUM_LAYERS = 2
+NUM_HIDDEN = 256
+NUM_LAYERS = 3
 NUM_EPOCH = 2000
 
 def lazy_property(function):

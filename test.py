@@ -4,17 +4,17 @@ import functools
 import random
 import argparse
 
-from input import get_final_data
+from input import get_final_data, get_test_data
 
 from tensorflow.models.rnn import rnn_cell
 from tensorflow.models.rnn import rnn
 
-WORD_DIM = 411
+WORD_DIM = 311
 MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
 BATCH_SIZE = 128
-NUM_HIDDEN = 350
-NUM_LAYERS = 2
+NUM_HIDDEN = 256
+NUM_LAYERS = 3
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -120,7 +120,7 @@ def pfunc(num):
     elif num == 4:
         return 'MISC'
 
-def fw(prediction,target,length):
+def fw(prediction,target,length, name):
     tp=np.array([0]*(NUM_CLASSES+2))
     fp=np.array([0]*(NUM_CLASSES+2))
     fn=np.array([0]*(NUM_CLASSES+2))
@@ -128,7 +128,7 @@ def fw(prediction,target,length):
     target = np.argmax(target, 2)
     prediction = np.argmax(prediction, 2)
 
-    f = open('results', 'w')
+    f = open(name, 'w')
     for i in range(len(target)):
         for j in range(length[i]):
             f.write(str(pfunc(target[i][j])) + " " + str(pfunc(prediction[i][j])) + "\n")
@@ -179,6 +179,8 @@ def f1(prediction,target,length):
 
 def train():
 
+    test_inp, test_out = get_test_data()
+    print "test data loaded"
     final_inp, final_out = get_final_data()
     print "final data loaded"
 
@@ -192,9 +194,13 @@ def train():
         saver = tf.train.Saver()
         saver.restore(sess, 'model_max.ckpt')
 
+	pred = sess.run(model.prediction, {data: test_inp, target: test_out, dropout: 1})
+        pred,length = sess.run(model.getpredf1, {data: test_inp, target: test_out, dropout: 1})
+        fw(pred,test_out,length, 'testaresults')
+
         pred = sess.run(model.prediction, {data: final_inp, target: final_out, dropout: 1})
         pred,length = sess.run(model.getpredf1, {data: final_inp, target: final_out, dropout: 1})
-        f1(pred,final_out,length)
+        fw(pred,final_out,length, 'testbresults')
 
 if __name__ == '__main__' :
     train()
