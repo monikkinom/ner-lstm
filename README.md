@@ -91,3 +91,33 @@ Class | Precission | Recall | FB1 | Numbers
 *MISC* | 75.80 | 75.80 | 75.80 | 905
 *ORG* | 88.03 | 87.27 | 87.65 | 2415
 *PER* | 95.04 | 95.69 | 95.37 | 2522
+
+**TrigramVec 311 dimensions**
+---------------------------
+*Testa*
+-------
+processed 49644 tokens with 8211 phrases; found: 8080 phrases; correct: 7619.
+
+Accuracy = 95.97%
+
+Class | Precission | Recall | FB1 | Numbers
+--- | --- | --- | --- | ---
+*NER* | 82.46 | 78.48 | 80.42 | 8080
+*LOC* | 81.53 | 85.41 | 83.43 | 2023
+*MISC* | 88.35 | 70.59 | 78.48 | 1123
+*ORG* | 73.99 | 72.27 | 73.12 | 2020
+*PER* | 87.43 | 81.36 | 84.29 | 2914
+
+*Testb*
+-------
+processed 45151 tokens with 7719 phrases; found: 7740 phrases; correct: 6911.
+
+Accuracy = 94.19%
+
+Class | Precission | Recall | FB1 | Numbers
+--- | --- | --- | --- | ---
+*NER* | 73.64 | 73.44 | 73.54 | 7740
+*LOC* | 75.89 | 78.80 | 77.32 | 1898
+*MISC* | 73.35 | 65.08 | 68.97 | 905
+*ORG* | 68.27 | 66.50 | 67.37 | 2415
+*PER* | 76.99 | 79.20 | 78.08 | 2522
