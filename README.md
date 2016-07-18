@@ -5,7 +5,7 @@
 
 Previous approaches to the problems have involved the usage of hand crafted language specific features, CRF and HMM based models, gazetteers, etc. Growing interest in deep learning has led to application of deep neural networks to the existing problems like that of NER. 
 
-We have implemented a 2 layer bidirectional LSTM network using tensorflow to classify the named entities for [CoNNL 2003 NER Shared Task](https://en.wikipedia.org/wiki/Named-entity_recognition). 
+We have implemented a 2 layer bidirectional LSTM network using tensorflow to classify the named entities for [CoNNL 2003 NER Shared Task](http://www.cnts.ua.ac.be/conll2003/ner/). 
 
 This project can be broadly divided into three components, the deep learning model, input and embeddings. 
 
