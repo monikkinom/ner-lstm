@@ -11,17 +11,17 @@ def get_dummy_data(num):
     return emb,tag
 
 def get_train_data():
-    emb = pickle.load(open('50_train_tvec','rb'))
+    emb = pickle.load(open('50_train_wvec','rb'))
     tag = pickle.load(open('50_train_tag','rb'))
     return emb,tag
 
 def get_test_data():
-    emb = pickle.load(open('50_testa_tvec','rb'))
+    emb = pickle.load(open('50_testa_wvec','rb'))
     tag = pickle.load(open('50_testa_tag','rb'))
     return emb,tag
 
 def get_final_data():
-    emb = pickle.load(open('50_testb_tvec','rb'))
+    emb = pickle.load(open('50_testb_wvec','rb'))
     tag = pickle.load(open('50_testb_tag','rb'))
     return emb,tag
 

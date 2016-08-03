@@ -31,11 +31,14 @@ class TrigramIndex:
 		pad = wl - len(word)
 		word += '#' * pad
 		tl = []
+		l = 0.0
 		for i in range(len(word) - 2):
 			trigram = word[i : i + 3]
 			ti = self.tri[trigram]
+			if ti != 0:
+				l = l + 1
 			tl.append(ti)
-		return np.array(tl)
+		return [np.array(tl), 1 / l]
 
 class TensorCorpus:
 
@@ -48,7 +51,7 @@ class TensorCorpus:
 		self.mostCommon = []
 		self.data = open(fName, 'r').read()
 		self.data = self.data.split()
-		self.vocabBuilder(100000)
+		self.vocabBuilder(50000)
 		print('Corpus Initialized.')
 
 	def vocabBuilder(self, size):
@@ -61,6 +64,7 @@ class TensorCorpus:
 	def nextBatch(self, batchSize, window, C):
 		batch = np.zeros((batchSize, self.mwl - 2))
 		label = np.zeros((batchSize, 1))
+		bl = np.zeros((batchSize, 1))
 		bind = 0
 		assert(batchSize % C == 0)
 		assert(2 * window >= C)
@@ -71,7 +75,9 @@ class TensorCorpus:
 				self.worPtr = self.worPtr + 1
 				continue
 			visited = [self.worPtr]
-			batch[bind : bind + C] = self.trigrams.triList(self.data[self.worPtr], self.mwl)
+			[ti, tl] = self.trigrams.triList(self.data[self.worPtr], self.mwl)
+			batch[bind : bind + C] = ti
+			bl[bind : bind + C] = tl
 			for i in range(C):
 				add = rint(s, e)
 				while add in visited:
@@ -83,7 +89,7 @@ class TensorCorpus:
 			if self.worPtr == len(self.data):
 				self.worPtr = 0
 			if bind == batchSize:
-				return [batch, label]
+				return [batch, bl, label]
 
 class WordVec:
 
@@ -102,14 +108,16 @@ class WordVec:
 			if not word[ptr].isalpha():
 				word[ptr] = ' '
 		words = ''.join(word).split()
-		ind = []
+		embedding = np.zeros((1000))
+		if len(words) == 0:
+			return embedding
 		for word in words:
-			ind += list(self.trigrams.triList(word, self.mwl))
-		embedding = np.sum(self.triVec[ind, :], axis = 0)
-		return embedding.reshape(-1)
+			obj = self.trigrams.triList(word, self.mwl)
+			embedding += np.sum(self.triVec[obj[0], :], axis = 0) / obj[1]
+		return embedding.reshape(-1) / len(words)
 
 	def loadVec(self):
-		self.triVec = np.load('TrigramVectors300.npy')
+		self.triVec = np.load('TrigramVectors1000.npy')
 
 	def similarity(self, word1, word2):
 		vec1 = self.genVec(word1)
@@ -126,16 +134,18 @@ class WordVec:
 		with graph.as_default():
 			trainInputs = tf.placeholder(tf.int64, shape=[batchSize, self.mwl - 2])
 			trainLabels = tf.placeholder(tf.int64, shape=[batchSize, 1])
+			trainLength = tf.placeholder(tf.float32, shape=[batchSize, 1])
 			embeddings = tf.Variable(tf.random_uniform([triSize, dim], -1.0, 1.0))
 			zeros = tf.zeros([1, dim], dtype = tf.float32)
 			zeroindices = tf.constant(zind, dtype = tf.int32)
 			setz = tf.scatter_update(embeddings, zeroindices, zeros)
 			embedlook = tf.nn.embedding_lookup(embeddings, trainInputs)
 			embed = tf.reduce_sum(embedlook, 1)
+			embedn = tf.mul(embed, trainLength);
 			nceWeights = tf.Variable(tf.truncated_normal([len(self.corpus.vocab), dim],stddev=1.0 / math.sqrt(dim)))
 			nceBiases = tf.Variable(tf.zeros([len(self.corpus.vocab)]))
-			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embed, trainLabels, 256, len(self.corpus.vocab)))
-			optimizer = tf.train.GradientDescentOptimizer(.003).minimize(loss)
+			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embedn, trainLabels, 256, len(self.corpus.vocab)))
+			optimizer = tf.train.GradientDescentOptimizer(.01).minimize(loss)
 		with tf.Session(graph = graph) as sess:
 			saver = tf.train.Saver()
 			tf.initialize_all_variables().run()
@@ -144,12 +154,13 @@ class WordVec:
 			if restore:
 				saver.restore(sess, 'backModel.ckpt')
 				i = pkl.load(open('backEPOCH.pkl', 'rb'))
+				self.corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
 				print('Restored Model state.')
 			total = (epoch * len(self.corpus.data) * 2 + batchSize - 1) // batchSize
 			lossAvg = 0
 			while i < total:
-				[batch, label] = self.corpus.nextBatch(batchSize, 5, 2)
-				_, lossVal = sess.run([optimizer, loss], feed_dict = {trainInputs:batch, trainLabels:label})
+				[batch, length, label] = self.corpus.nextBatch(batchSize, 5, 2)
+				_, lossVal = sess.run([optimizer, loss], feed_dict = {trainInputs:batch, trainLength:length, trainLabels:label})
 				sess.run(setz)
 				lossAvg = lossAvg + lossVal
 				i = i + 1
@@ -167,21 +178,21 @@ class WordVec:
 			np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)
 
 def main():	
-	#corpus = TensorCorpus('/home/shreenivas/Desktop/Corpus/Corpus.txt')
+	corpus = TensorCorpus('/home/shreenivas/Desktop/IIITH/Corpus/Tensors.txt')
 	#if restore:
 	#	corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
 	#	print('Restored Corpus state.')
-	numList = ['zero', 'one', 'two', 'three', 'four', 'six', 'seven', 'eight', 'nine']
-	wvec = WordVec()
-	s = 0
-	no = 0
-	for i in numList:
-		for j in numList:
-			if i != j:
-				s = s + wvec.similarity(i, j)
-				no = no  + 1
-	print(s / no)
-	#wvec.train(300, 1000, 3)
+	#numList = ['zero', 'one', 'two', 'three', 'four', 'six', 'seven', 'eight', 'nine']
+	wvec = WordVec(corpus)
+	#s = 0
+	#no = 0
+	#for i in numList:
+	#	for j in numList:
+	#		if i != j:
+	#			s = s + wvec.similarity(i, j)
+	#			no = no  + 1
+	#print(s / no)
+	wvec.train(1000, 500, 10)
 
 if __name__ == '__main__':
 	restore = input('Restore:')

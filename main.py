@@ -158,7 +158,7 @@ def train(args):
 
     train_inp, train_out = get_train_data()
     print "train data loaded"
-    no_of_batches = len(train_inp) / BATCH_SIZE
+    no_of_batches = (len(train_inp) + BATCH_SIZE - 1) / BATCH_SIZE
 
     test_inp, test_out = get_test_data()
     print "test data loaded"

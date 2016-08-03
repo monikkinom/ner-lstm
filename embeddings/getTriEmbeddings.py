@@ -3,10 +3,8 @@ import numpy as np
 import random
 import pickle as pkl
 import sys
-
-WORD_DIM = 300
+WORD_DIM = 1000
 model = WordVec()
-
 
 def findMaxLenght(FILE_NAME):
 	temp = 0
@@ -93,7 +91,6 @@ def get_input(FILE_NAME, op, optag):
 		else:
 			assert(len(line.split()) == 4)
 			sentence_length += 1
-
 			temp = model.genVec(line.split()[0])
 			temp = np.append(temp,pos(line.split()[1])) # adding pos embeddings
 			temp = np.append(temp,chunk(line.split()[2])) # adding chunk embeddings
