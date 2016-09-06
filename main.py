@@ -44,9 +44,9 @@ class Model():
     @lazy_property
     def prediction(self):
         rnn_cell = tf.nn.rnn_cell #comment this line if tensorflow version < 0.9
-        fw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        fw_cell = rnn_cell.LSTMCell(self._num_hidden,state_is_tuple=True)
         fw_cell = rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=self.dropout)
-        bw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        bw_cell = rnn_cell.LSTMCell(self._num_hidden,state_is_tuple=True)
         bw_cell = rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=self.dropout)
 
         if self._num_layers > 1:
