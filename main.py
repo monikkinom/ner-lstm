@@ -6,8 +6,9 @@ import argparse
 
 from input import get_train_data,get_test_data,get_final_data
 
-from tensorflow.models.rnn import rnn_cell
-from tensorflow.models.rnn import rnn
+# from tensorflow.models.rnn import rnn_cell 
+# from tensorflow.models.rnn import rnn
+# for tensorflow version < 0.9 uncomment the above two lines
 
 WORD_DIM = 311
 MAX_SEQ_LEN = 50
@@ -42,16 +43,18 @@ class Model():
 
     @lazy_property
     def prediction(self):
-        fw_cell = rnn_cell.BasicRNNCell(self._num_hidden)
+        rnn_cell = tf.nn.rnn_cell #comment this line if tensorflow version < 0.9
+        fw_cell = rnn_cell.LSTMCell(self._num_hidden,state_is_tuple=True)
         fw_cell = rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=self.dropout)
-        bw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        bw_cell = rnn_cell.LSTMCell(self._num_hidden,state_is_tuple=True)
         bw_cell = rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=self.dropout)
 
         if self._num_layers > 1:
             fw_cell = rnn_cell.MultiRNNCell([fw_cell] * self._num_layers)
             bw_cell = rnn_cell.MultiRNNCell([bw_cell] * self._num_layers)
-
-        output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length)
+        output, _, _ = tf.nn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length) 
+        #output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length)
+        #uncomment the above line and comment the line above it for tensorflow version < 0.9
         max_length = int(self.target.get_shape()[1])
         num_classes = int(self.target.get_shape()[2]) 
         weight, bias = self._weight_and_bias(2*self._num_hidden, num_classes)
