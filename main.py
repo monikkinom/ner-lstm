@@ -12,9 +12,9 @@ from tensorflow.models.rnn import rnn
 WORD_DIM = 311
 MAX_SEQ_LEN = 50
 NUM_CLASSES = 5
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 NUM_HIDDEN = 256
-NUM_LAYERS = 3
+NUM_LAYERS = 2
 NUM_EPOCH = 2000
 
 def lazy_property(function):
@@ -42,7 +42,7 @@ class Model():
 
     @lazy_property
     def prediction(self):
-        fw_cell = rnn_cell.LSTMCell(self._num_hidden)
+        fw_cell = rnn_cell.BasicRNNCell(self._num_hidden)
         fw_cell = rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=self.dropout)
         bw_cell = rnn_cell.LSTMCell(self._num_hidden)
         bw_cell = rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=self.dropout)
@@ -53,7 +53,7 @@ class Model():
 
         output, _, _ = rnn.bidirectional_rnn(fw_cell, bw_cell, tf.unpack(tf.transpose(self.data, perm=[1, 0, 2])), dtype=tf.float32, sequence_length=self.length)
         max_length = int(self.target.get_shape()[1])
-        num_classes = int(self.target.get_shape()[2])
+        num_classes = int(self.target.get_shape()[2]) 
         weight, bias = self._weight_and_bias(2*self._num_hidden, num_classes)
         output = tf.reshape(tf.transpose(tf.pack(output), perm=[1, 0, 2]), [-1, 2*self._num_hidden])
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
@@ -111,9 +111,9 @@ class Model():
 
 
 def f1(prediction,target,length):
-    tp=np.array([0]*(NUM_CLASSES+2))
-    fp=np.array([0]*(NUM_CLASSES+2))
-    fn=np.array([0]*(NUM_CLASSES+2))
+    tp=np.array([0]*(NUM_CLASSES+1))
+    fp=np.array([0]*(NUM_CLASSES+1))
+    fn=np.array([0]*(NUM_CLASSES+1))
 
     target = np.argmax(target, 2)
     prediction = np.argmax(prediction, 2)
@@ -127,21 +127,17 @@ def f1(prediction,target,length):
                 fp[target[i][j]] += 1
                 fn[prediction[i][j]] += 1
 
-    NON_NAMED_ENTITY = 0
+    NON_NAMED_ENTITY = 11
     for i in range(NUM_CLASSES):
         if i != NON_NAMED_ENTITY:
-            tp[5] += tp[i]
-            fp[5] += fp[i]
-            fn[5] += fn[i]
-        else:
-            tp[6] += tp[i]
-            fp[6] += fp[i]
-            fn[6] += fn[i]
+            tp[NUM_CLASSES] += tp[i]
+            fp[NUM_CLASSES] += fp[i]
+            fn[NUM_CLASSES] += fn[i]
 
     precision = []
     recall = []
     fscore = []
-    for i in range(NUM_CLASSES+2):
+    for i in range(NUM_CLASSES+1):
         precision.append(tp[i]*1.0/(tp[i]+fp[i]))
         recall.append(tp[i]*1.0/(tp[i]+ fn[i]))
         fscore.append(2.0*precision[i]*recall[i]/(precision[i]+recall[i]))
@@ -149,9 +145,10 @@ def f1(prediction,target,length):
     #print "precision = " ,precision
     #print "recall = " ,recall
     #print "f1score = " ,fscore
-    
-    print "Entity fscore :", fscore[5]    
-    return fscore[5]
+    print(precision)
+    print(recall)
+    print(fscore)
+    return fscore[NUM_CLASSES]
 
 
 def train(args):
@@ -178,8 +175,8 @@ def train(args):
         if args.restore is not None:
             saver.restore(sess, 'model.ckpt')
             print "last model restored"
-
-        for epoch in range(NUM_EPOCH):
+        
+        for epoch in range(200):
             ptr=0
             for _ in range(no_of_batches):
                 batch_inp, batch_out = train_inp[ptr:ptr+BATCH_SIZE], train_out[ptr:ptr+BATCH_SIZE]
@@ -188,7 +185,6 @@ def train(args):
             if epoch % 10 == 0:
                 save_path = saver.save(sess, "model.ckpt")
                 print("Model saved in file: %s" % save_path)
-                
             pred = sess.run(model.prediction, {data: test_inp, target: test_out, dropout: 1})
             pred,length = sess.run(model.getpredf1, {data: test_inp, target: test_out, dropout: 1})
             print "Epoch:" + str(epoch), "TestA score,"

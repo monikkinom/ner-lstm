@@ -3,198 +3,184 @@ from numpy.random import randint as rint
 import math, pickle as pkl
 import tensorflow as tf
 
-class TrigramIndex:
+NGRAM = 3
+MWL = 45
+WINDOW = 5
 
-	def __init__(self):
-		self.tri = {}
-		self.alpha = [chr(i) for i in range(97, 123)]
-		self.alpha.insert(0, '#')
-		self.trigramBuilder()
+class NGram:
+	def __init__(self, N):
+		self.N = N
 
-	def trigramBuilder(self):
-		_ = [0, 0, 0]
-		index = 0
-		for i in range(27):
-			_[0] = self.alpha[i]
-			for j in range(27):
-				_[1] = self.alpha[j]
-				for k in range(27):
-					_[2] = self.alpha[k]
-					self.tri[''.join(_)] = index
-					index = index + 1
+	def alpha(self, ch):
+		return ord(ch)-97
 
-	def get(self, trigram):
-		return self.tri[trigram]
+	def __getitem__(self, gram):
+		gram = gram.lower()
+		ind = 0
+		for ch in gram:
+			ind = ind*26+self.alpha(ch)
+		app = 0
+		for l in range(len(gram)):
+			app += 26**l
+		return ind+app
 
-	def triList(self, word, wl):
+	def gramList(self, word, gl):
 		word = word.lower()
-		pad = wl - len(word)
-		word += '#' * pad
-		tl = []
-		l = 0.0
-		for i in range(len(word) - 2):
-			trigram = word[i : i + 3]
-			ti = self.tri[trigram]
-			if ti != 0:
-				l = l + 1
-			tl.append(ti)
-		return [np.array(tl), 1 / l]
+		gramlist = []
+		if len(word) < self.N:
+			gram = word
+			gramlist.append(self.__getitem__(gram))
+		else:
+			for i in range(0, len(word), self.N):
+				if i+self.N>len(word):
+					break
+				gram = word[i:i+self.N]
+				gramlist.append(self.__getitem__(gram))
+		l = len(gramlist)
+		gl -= l
+		gl = [0]*gl
+		gramlist.extend(gl)
+		return [gramlist, l]
 
 class TensorCorpus:
-
-	def __init__(self, fName, maxWordLength = 47):
+	def __init__(self, fName, N = 3, window = 5, maxWordLength = 50):
 		self.fName = fName
-		self.worPtr = 0
+		self.N = N
+		self.window = window
 		self.mwl = maxWordLength
-		self.trigrams = TrigramIndex()
+		self.ngram = NGram(N)
 		self.vocab = {}
-		self.mostCommon = []
-		self.data = open(fName, 'r').read()
-		self.data = self.data.split()
+		self.data = open(fName, 'r').read().split()
+		self.trim(self.mwl)
 		self.vocabBuilder(50000)
-		print('Corpus Initialized.')
+		self.createData()
+		print('Corpus created.')
+
+	def trim(self, mwl):
+		tmp = []
+		for word in self.data:
+			if len(word) <= self.mwl:
+				tmp.append(word)
+		self.data = tmp
 
 	def vocabBuilder(self, size):
-		count = [['UNK', 0]]
-		count.extend(collections.Counter(self.data).most_common(size - 1))
+		count = [['UNK', 0], ['END', 0]]
+		count.extend(collections.Counter(self.data).most_common(size-2))
 		for word, _ in count:
 			self.vocab[word] = len(self.vocab)
-		self.mostCommon = [count[i][0] for i in range(150)]
 
-	def nextBatch(self, batchSize, window, C):
-		batch = np.zeros((batchSize, self.mwl - 2))
-		label = np.zeros((batchSize, 1))
-		bl = np.zeros((batchSize, 1))
-		bind = 0
-		assert(batchSize % C == 0)
-		assert(2 * window >= C)
-		while True:
-			s = max(0, self.worPtr - window)
-			e = min(len(self.data), self.worPtr + window + 1)
-			if e - s - 1 < C:
-				self.worPtr = self.worPtr + 1
-				continue
-			visited = [self.worPtr]
-			[ti, tl] = self.trigrams.triList(self.data[self.worPtr], self.mwl)
-			batch[bind : bind + C] = ti
-			bl[bind : bind + C] = tl
-			for i in range(C):
-				add = rint(s, e)
-				while add in visited:
-					add = rint(s, e)
-				label[bind] = self.vocab.get(self.data[add], 0)
-				visited.append(add)
-				bind = bind + 1
-			self.worPtr = self.worPtr + 1
-			if self.worPtr == len(self.data):
-				self.worPtr = 0
-			if bind == batchSize:
-				return [batch, bl, label]
+	def createData(self):
+		X = np.zeros((len(self.data), self.mwl-self.N+1), dtype = np.int32)
+		Y = np.ones((len(self.data), 2*self.window), dtype = np.int32)
+		L = np.zeros((len(self.data), 1), dtype = np.float32)
+		flatinp = []
+		i = 0 
+		for word in self.data:
+			flatinp.append(self.vocab.get(word, 0))
+			X[i, :], L[i] = self.ngram.gramList(word, self.mwl-self.N+1)
+			i += 1
+		for i in range(len(flatinp)):
+			bound = max(0, i-self.window)
+			behind = flatinp[bound:i]
+			Y[i, self.window:self.window+len(behind)] = behind
+			ahead = flatinp[i+1:i+1+self.window]
+			Y[i, 0:len(ahead)] = ahead
+		pkl.dump(self.vocab, open('vocab.pkl', 'wb'))
+		np.save("Y"+str(WINDOW)+str(self.mwl)+".npy", Y)
+		np.save("X"+str(self.N)+str(self.mwl)+".npy", X)
+		np.save("L"+str(self.N)+str(self.mwl)+".npy", L)
 
-class WordVec:
+class GVec:
+	def __init__(self, N, dim, mwl, vec = []):
+		self.ngram = NGram(N)
+		self.tot = 0
+		for i in range(N+1):
+			self.tot += 26**i
+		self.N = N
+		self.dim = dim
+		self.mwl = mwl	
+		self.vec = vec
 
-	def __init__(self, corpus = None, maxWordLength = 47):
-		self.trigrams = TrigramIndex()
-		self.triVec = None
-		self.mwl = maxWordLength
-		if corpus != None:
-			self.corpus = corpus
-		else:
-			self.loadVec()
-
-	def genVec(self, word):
+	def __getitem__(self, word):
 		word = list(word.lower())
 		for ptr in range(len(word)):
 			if not word[ptr].isalpha():
 				word[ptr] = ' '
 		words = ''.join(word).split()
-		embedding = np.zeros((1000))
-		if len(words) == 0:
-			return embedding
+		embedding = np.zeros((self.dim))
 		for word in words:
-			obj = self.trigrams.triList(word, self.mwl)
-			embedding += np.sum(self.triVec[obj[0], :], axis = 0) / obj[1]
-		return embedding.reshape(-1) / len(words)
+			obj = self.ngram.gramList(word, self.mwl-self.N+1)
+			embedding += np.sum(self.vec[obj[0], :], axis = 0)/obj[1]
+		l = max(1, len(words))
+		return embedding/l
 
-	def loadVec(self):
-		self.triVec = np.load('TrigramVectors1000.npy')
-
-	def similarity(self, word1, word2):
-		vec1 = self.genVec(word1)
-		vec2 = self.genVec(word2)
+	def cosineDistance(self, word1, word2):
+		vec1 = self.__getitem__(word1)
+		vec2 = self.__getitem__(word2)
 		n1 = np.linalg.norm(vec1)
 		n2 = np.linalg.norm(vec2)
-		score = np.sum(vec1 * vec2) / (n1 * n2)
+		score = np.dot(vec1, vec2)/(n1*n2)
 		return score
 
-	def train(self, dim, batchSize, epoch):
+	def mostSimilar(self, vocab, word, no = 10):
+		word = word.lower()
+		wordtup = []
+		for attr in vocab:
+			if attr != 'UNK':
+				r = self.cosineDistance(word, attr)
+				wordtup.append([attr, r])
+		return sorted(wordtup, key = lambda x:abs(x[1]), reverse = True)[0:no]
+
+	def train(self, X, Y, L, batchSize, vocab, epoch = 1):
 		graph = tf.Graph()
-		triSize = len(self.trigrams.tri)
 		zind = [0]
 		with graph.as_default():
-			trainInputs = tf.placeholder(tf.int64, shape=[batchSize, self.mwl - 2])
-			trainLabels = tf.placeholder(tf.int64, shape=[batchSize, 1])
-			trainLength = tf.placeholder(tf.float32, shape=[batchSize, 1])
-			embeddings = tf.Variable(tf.random_uniform([triSize, dim], -1.0, 1.0))
-			zeros = tf.zeros([1, dim], dtype = tf.float32)
+			trainInputs = tf.placeholder(tf.int32, shape=[None, X.shape[1]])
+			trainLabels = tf.placeholder(tf.int32, shape=[None, Y.shape[1]])
+			trainLength = tf.placeholder(tf.float32, shape=[None, 1])
+			embeddings = tf.Variable(tf.random_uniform([self.tot, self.dim], -1.0, 1.0))
+			zeros = tf.zeros([1, self.dim], dtype = tf.float32)
 			zeroindices = tf.constant(zind, dtype = tf.int32)
 			setz = tf.scatter_update(embeddings, zeroindices, zeros)
 			embedlook = tf.nn.embedding_lookup(embeddings, trainInputs)
-			embed = tf.reduce_sum(embedlook, 1)
-			embedn = tf.mul(embed, trainLength);
-			nceWeights = tf.Variable(tf.truncated_normal([len(self.corpus.vocab), dim],stddev=1.0 / math.sqrt(dim)))
-			nceBiases = tf.Variable(tf.zeros([len(self.corpus.vocab)]))
-			loss = tf.reduce_mean(tf.nn.nce_loss(nceWeights, nceBiases, embedn, trainLabels, 256, len(self.corpus.vocab)))
-			optimizer = tf.train.GradientDescentOptimizer(.01).minimize(loss)
+			embed = tf.reduce_sum(embedlook, 1)/trainLength
+			nceWeights = tf.Variable(tf.truncated_normal([len(vocab), self.dim], stddev = 1.0/math.sqrt(self.dim)))
+			nceBiases = tf.Variable(tf.zeros([len(vocab)]))
+			loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(nceWeights, nceBiases, embed, trainLabels, 1000, len(vocab), Y.shape[1]))
+			optimizer = tf.train.GradientDescentOptimizer(1).minimize(loss)
 		with tf.Session(graph = graph) as sess:
 			saver = tf.train.Saver()
 			tf.initialize_all_variables().run()
 			sess.run(setz)
-			i = 0
-			if restore:
+			NO = (X.shape[0]+batchSize-1)/batchSize
+			try:
 				saver.restore(sess, 'backModel.ckpt')
-				i = pkl.load(open('backEPOCH.pkl', 'rb'))
-				self.corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
-				print('Restored Model state.')
-			total = (epoch * len(self.corpus.data) * 2 + batchSize - 1) // batchSize
+			except:
+				pass
 			lossAvg = 0
-			while i < total:
-				[batch, length, label] = self.corpus.nextBatch(batchSize, 5, 2)
-				_, lossVal = sess.run([optimizer, loss], feed_dict = {trainInputs:batch, trainLength:length, trainLabels:label})
+			for i in range(0, X.shape[0], batchSize):
+				_, lossVal = sess.run([optimizer, loss], feed_dict = {trainInputs:X[i:i+batchSize], trainLength:L[i:i+batchSize], trainLabels:Y[i:i+batchSize]})
 				sess.run(setz)
 				lossAvg = lossAvg + lossVal
-				i = i + 1
-				if i % 1000 == 0:
-					print(i * 100 / total, '% done. Avg Batch Loss:', lossAvg / 1000)
-					lossAvg = 0
-				if i % 10000 == 0:
-					savep = saver.save(sess, 'backModel.ckpt')
-					pkl.dump(self.corpus.worPtr, open('backCorpus.pkl', 'wb'))
-					pkl.dump(i, open('backEPOCH.pkl', 'wb'))
-					self.triVec = embeddings.eval()
-					np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)	
-					print('Saved Everything.')
-			self.triVec = embeddings.eval()
-			np.save('TrigramVectors' + str(dim) + '.npy', self.triVec)
+				print('\rBatch %d/%d Avg batch Loss:%f' % (i//batchSize+1, NO, lossVal), end = "...")
+			print("Average epoch loss =", lossAvg/NO)
+			saver.save(sess, 'backModel.ckpt')
+			self.vec = embeddings.eval()
+			np.save('Vectors'+str(self.N)+str(self.dim)+'.npy', self.vec)
 
-def main():	
-	corpus = TensorCorpus('/home/shreenivas/Desktop/IIITH/Corpus/Tensors.txt')
-	#if restore:
-	#	corpus.worPtr = pkl.load(open('backCorpus.pkl', 'rb'))
-	#	print('Restored Corpus state.')
-	#numList = ['zero', 'one', 'two', 'three', 'four', 'six', 'seven', 'eight', 'nine']
-	wvec = WordVec(corpus)
-	#s = 0
-	#no = 0
-	#for i in numList:
-	#	for j in numList:
-	#		if i != j:
-	#			s = s + wvec.similarity(i, j)
-	#			no = no  + 1
-	#print(s / no)
-	wvec.train(1000, 500, 10)
+def main():
+	try:
+		X = np.load("X"+str(NGRAM)+str(MWL)+".npy")
+		L = np.load("L"+str(NGRAM)+str(MWL)+".npy")
+		Y = np.load("Y"+str(WINDOW)+str(MWL)+".npy")
+	except:
+		corpus = TensorCorpus('/media/shreenivas/LinuxData/IIITH/Corpus/Tensor.txt', NGRAM, WINDOW, MWL)
+		del corpus
+		X = np.load("X"+str(NGRAM)+str(MWL)+".npy")
+		L = np.load("L"+str(NGRAM)+str(MWL)+".npy")
+		Y = np.load("Y"+str(WINDOW)+str(MWL)+".npy")
+	wvec = GVec(NGRAM, 300, MWL)
+	wvec.train(X, Y, L, 5000, pkl.load(open('vocab.pkl', 'rb')))
 
 if __name__ == '__main__':
-	restore = input('Restore:')
-	restore = int(restore)
 	main()

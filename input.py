@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import pickle
-
+from pickle import Pickler as pkl
 
 def get_dummy_data(num):
     emb = [[[random.random() for _ in range(300)] for i in range(50)] for j in range(num)]
@@ -29,3 +29,17 @@ def get_indi_data():
     emb = pickle.load(open('t','rb'))
     tag = pickle.load(open('tag','rb'))
     return emb,tag
+
+def main():
+    a, b = get_train_data()
+    c, d = get_test_data()
+    e, f = get_final_data()
+    pkl(open('50_train_wvec', 'wb'), protocol = 2).dump(a)
+    pkl(open('50_train_tag', 'wb'), protocol = 2).dump(b)
+    pkl(open('50_testa_wvec', 'wb'), protocol = 2).dump(c)
+    pkl(open('50_testa_tag', 'wb'), protocol = 2).dump(d)
+    pkl(open('50_testb_wvec', 'wb'), protocol = 2).dump(e)
+    pkl(open('50_testb_tag', 'wb'), protocol = 2).dump(f)
+
+if __name__ == '__main__':
+    main()

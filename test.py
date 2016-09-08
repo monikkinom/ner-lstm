@@ -9,12 +9,12 @@ from input import get_final_data, get_test_data
 from tensorflow.models.rnn import rnn_cell
 from tensorflow.models.rnn import rnn
 
-WORD_DIM = 311
-MAX_SEQ_LEN = 50
-NUM_CLASSES = 5
+WORD_DIM = 305
+MAX_SEQ_LEN = 70
+NUM_CLASSES = 12
 BATCH_SIZE = 128
-NUM_HIDDEN = 256
-NUM_LAYERS = 3
+NUM_HIDDEN = 300
+NUM_LAYERS = 1
 
 def lazy_property(function):
     attribute = '_' + function.__name__
@@ -121,17 +121,13 @@ def pfunc(num):
         return 'MISC'
 
 def fw(prediction,target,length, name):
-    tp=np.array([0]*(NUM_CLASSES+2))
-    fp=np.array([0]*(NUM_CLASSES+2))
-    fn=np.array([0]*(NUM_CLASSES+2))
-
     target = np.argmax(target, 2)
     prediction = np.argmax(prediction, 2)
 
     f = open(name, 'w')
     for i in range(len(target)):
         for j in range(length[i]):
-            f.write(str(pfunc(target[i][j])) + " " + str(pfunc(prediction[i][j])) + "\n")
+            f.write(str(target[i][j]) + " " + str(prediction[i][j]) + "\n")
 	f.write('\n')
 
 def f1(prediction,target,length):
