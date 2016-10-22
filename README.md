@@ -54,13 +54,13 @@ The function to calculate the F1 Scores, Prediction Accuracy and Recall is also 
 The path of the generated pickle file from above needs to be set in **input.py**.
 Use the **model.py** to run the deep neural network which will start running and optimizing the F1 scores.
 
-### Results
+### Final Results
 
 Dataset | Model | Embedding size | Test_a | Test_b
---- | --- | --- | ---
-CONLL | Glove | 311 | 93.99 | 90.32
-CONLL | Word2Vec | 311 | 93.5 | 89.4
-ICON | Glove | 311 | 78.6 | 77.48 
+--- | --- | --- | --- | ---
+**CONLL** | Glove | 311 | 93.99 | 90.32
+**CONLL** | Word2Vec | 311 | 93.5 | 89.4
+**ICON** | Glove | 311 | 78.6 | 77.48 
 
 ### CONLL samples
 
