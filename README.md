@@ -32,13 +32,13 @@ First train the model or load from an existing one from the files given in embed
 ###### Hindi
 Follow the same steps as english but first convert corpus to english type using **hindi_util.py**.
 ######Comparison
-We have done a comparison between embedding models by training all of them on a small 100mb corpus and evaluating on the conll ner dataset.
+We have done a comparison between **111 dimension** embedding models by training all of them on a small 100mb corpus and evaluating on the conll ner dataset.
 
 Model | Test_a | Test_b
 --- | --- | ---
-**word2vec** | 88.33 | 83.40
-**glove** | 89.62 | 83.10
-**rnnvec** | 81.07 | 75.20
+Word2Vec | 88.33 | 83.40
+Glove | 89.62 | 83.10
+RnnVec | 81.07 | 75.20
 
 ### Preparing the inputs
 
