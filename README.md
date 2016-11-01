@@ -73,7 +73,7 @@ A sample result produced by conll eval script is presented here.
 processed 49644 tokens with 8211 phrases; found: 8080 phrases; correct: 7619.
 Accuracy = 98.54%
 
-Class | Precission | Recall | FB1 | Numbers
+Class | Precision | Recall | FB1 | Numbers
 --- | --- | --- | --- | ---
 *NER* | 94.29 | 92.79 | 93.54 | 8080
 *LOC* | 94.86 | 94.25 | 94.56 | 2023
@@ -86,7 +86,7 @@ Class | Precission | Recall | FB1 | Numbers
 processed 45151 tokens with 7719 phrases; found: 7740 phrases; correct: 6911.
 Accuracy = 97.49%
 
-Class | Precission | Recall | FB1 | Numbers
+Class | Precision | Recall | FB1 | Numbers
 --- | --- | --- | --- | ---
 *NER* | 89.29 | 89.53 | 89.41 | 7740
 *LOC* | 89.67 | 90.87 | 90.27 | 1898
