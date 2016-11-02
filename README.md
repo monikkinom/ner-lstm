@@ -1,3 +1,6 @@
+This Repository contains the code which implements the approach described in the following Arxiv Preprint: https://arxiv.org/abs/1610.09756
+
+
 # ner-lstm
 
 ### Requirements
