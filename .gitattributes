@@ -1,1 +1,5 @@
 embeddings/GloVe-1.2/* linguist-vendored=false
+embeddings/GloVe-1.2/src/cooccur.c linguist-vendored=false
+embeddings/GloVe-1.2/src/glove.c linguist-vendored=false
+embeddings/GloVe-1.2/src/shuffle.c linguist-vendored=false
+embeddings/GloVe-1.2/src/vocab_count.c linguist-vendored=false
