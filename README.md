@@ -29,7 +29,7 @@ Each unique word should have certain number of features, these are called embedd
 You need a corpus comprising of text separated by only spaces if you are training a model.
 First train the model or load from an existing one from the files given in embeddings.
 **wordvec_model.py** - creates a model of word2vec, 2 ways to create the model either by supplying a corpus to train or restore from word2vec gensim bin file.
-**glove_model.py** - creates a model of glove, 2 ways to create the model either by supplying a corpus to train or restore from a glove vector.txt file.
+**glove_model.py** - creates a model of glove, 2 ways to create the model either by supplying a corpus to train or restore from a glove vector.txt file. Copy corpus in Glove-1.2 directory and run the code from embeddings folder and give name of corpus as param.
 **rnnvec_model.py** - creates a model of LSTM, only way is by supplying a corpus.
 
 ###### Hindi
