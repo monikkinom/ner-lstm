@@ -1,12 +1,12 @@
 This Repository contains the code which implements the approach described in the following Arxiv Preprint: https://arxiv.org/abs/1610.09756
-
+which is published in ICON-16 conference.
 
 # ner-lstm
 
 ### Requirements
 
 * tensorflow
-* pip install git+git://github.com/irshadbhat/indic-wx-converter.git
+* https://github.com/irshadbhat/indictrans.git (only for hindi)
 * gensim 
 
 ### Named Entity Recognition using multi-layered bidirectional LSTMs and task adapted word embeddings
