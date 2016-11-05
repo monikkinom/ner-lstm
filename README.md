@@ -6,7 +6,7 @@ which is published in ICON-16 conference.
 ### Requirements
 
 * tensorflow
-* https://github.com/irshadbhat/indictrans.git (only for hindi)
+* pip install git+git://github.com/ltrc/indic-wx-converter.git (only for hindi)
 * gensim 
 
 ### Named Entity Recognition using multi-layered bidirectional LSTMs and task adapted word embeddings
