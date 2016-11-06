@@ -58,19 +58,22 @@ def capital(word):
         return np.array([0])
 
 
-def get_input(model, word_dim, input_file, output_embed, output_tag):
+def get_input(model, word_dim, input_file, output_embed, output_tag, sentence_length=-1):
     print('processing %s' % input_file)
     word = []
     tag = []
     sentence = []
     sentence_tag = []
-    max_sentence_length = find_max_length(input_file)
+    if sentence_length == -1:
+        max_sentence_length = find_max_length(input_file)
+    else:
+        max_sentence_length = sentence_length
     sentence_length = 0
     print("max sentence length is %d" % max_sentence_length)
     for line in open(input_file):
         if line in ['\n', '\r\n']:
             for _ in range(max_sentence_length - sentence_length):
-                tag.append(np.array([0, 0, 0, 0, 0]))
+                tag.append(np.array([0] * 12))
                 temp = [0 for _ in range(word_dim + 11)]
                 word.append(temp)
             sentence.append(word)
@@ -127,10 +130,14 @@ if __name__ == '__main__':
     parser.add_argument('--train', type=str, help='train file location', required=True)
     parser.add_argument('--test_a', type=str, help='test_a file location', required=True)
     parser.add_argument('--test_b', type=str, help='test_b location', required=True)
+    parser.add_argument('--sentence_length', type=int, default=-1, help='max sentence length')
     parser.add_argument('--use_model', type=str, help='model location', required=True)
     parser.add_argument('--model_dim', type=int, help='model dimension of words', required=True)
     args = parser.parse_args()
     trained_model = pkl.load(open(args.use_model, 'rb'))
-    get_input(trained_model, args.model_dim, args.train, 'train_embed.pkl', 'train_tag.pkl')
-    get_input(trained_model, args.model_dim, args.test_a, 'test_a_embed.pkl', 'test_a_tag.pkl')
-    get_input(trained_model, args.model_dim, args.test_b, 'test_b_embed.pkl', 'test_b_tag.pkl')
+    get_input(trained_model, args.model_dim, args.train, 'train_embed.pkl', 'train_tag.pkl',
+              sentence_length=args.sentence_length)
+    get_input(trained_model, args.model_dim, args.test_a, 'test_a_embed.pkl', 'test_a_tag.pkl',
+              sentence_length=args.sentence_length)
+    get_input(trained_model, args.model_dim, args.test_b, 'test_b_embed.pkl', 'test_b_tag.pkl',
+              sentence_length=args.sentence_length)
