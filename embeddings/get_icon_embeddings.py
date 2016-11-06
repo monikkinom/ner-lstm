@@ -74,7 +74,7 @@ def get_input(model, word_dim, input_file, output_embed, output_tag, sentence_le
         if line in ['\n', '\r\n']:
             for _ in range(max_sentence_length - sentence_length):
                 tag.append(np.array([0] * 12))
-                temp = [0 for _ in range(word_dim + 11)]
+                temp = np.array([0 for _ in range(word_dim + 11)])
                 word.append(temp)
             sentence.append(word)
             sentence_tag.append(np.array(tag))
