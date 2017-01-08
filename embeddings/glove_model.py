@@ -11,7 +11,7 @@ class GloveVec:
         self.model = {}
         self.rand_model = RandomVec(args.dimension)
         if args.restore is None:
-            os.chdir('GloVe-1.2')
+            os.chdir(args.glove_path)
             os.system('bash demo.sh ' + args.corpus + ' ' + str(args.dimension))
             os.system('rm -r build *.bin vocab.txt')
             path = 'vectors.txt'
@@ -43,6 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('--corpus', type=str, help='corpus location', required=True)
     parser.add_argument('--dimension', type=int, help='vector dimension', required=True)
     parser.add_argument('--restore', type=str, default=None, help='pre-trained glove vectors.txt')
+    parser.add_argument('--glove_path', type=str, help='path to glove c code', required=True)
     args = parser.parse_args()
     model = GloveVec(args)
     pkl.dump(model, open('glovevec_model_' + str(args.dimension) + '.pkl', 'wb'))
