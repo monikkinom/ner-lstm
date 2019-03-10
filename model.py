@@ -10,26 +10,49 @@ class Model:
         self.args = args
         self.input_data = tf.placeholder(tf.float32, [None, args.sentence_length, args.word_dim])
         self.output_data = tf.placeholder(tf.float32, [None, args.sentence_length, args.class_size])
-        fw_cell = tf.nn.rnn_cell.LSTMCell(args.rnn_size, state_is_tuple=True)
-        fw_cell = tf.nn.rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=0.5)
-        bw_cell = tf.nn.rnn_cell.LSTMCell(args.rnn_size, state_is_tuple=True)
-        bw_cell = tf.nn.rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=0.5)
-        fw_cell = tf.nn.rnn_cell.MultiRNNCell([fw_cell] * args.num_layers, state_is_tuple=True)
-        bw_cell = tf.nn.rnn_cell.MultiRNNCell([bw_cell] * args.num_layers, state_is_tuple=True)
+        #fw_cell = tf.nn.rnn_cell.LSTMCell(args.rnn_size)
+        #fw_cell = tf.nn.rnn_cell.DropoutWrapper(fw_cell, output_keep_prob=0.5)
+        #bw_cell = tf.nn.rnn_cell.LSTMCell(args.rnn_size)
+        #bw_cell = tf.nn.rnn_cell.DropoutWrapper(bw_cell, output_keep_prob=0.5)
+        fw_cell = tf.nn.rnn_cell.MultiRNNCell([self.lstm_cell() for _ in range(args.num_layers)], state_is_tuple=True)
+        bw_cell = tf.nn.rnn_cell.MultiRNNCell([self.lstm_cell() for _ in range(args.num_layers)], state_is_tuple=True)
         words_used_in_sent = tf.sign(tf.reduce_max(tf.abs(self.input_data), reduction_indices=2))
         self.length = tf.cast(tf.reduce_sum(words_used_in_sent, reduction_indices=1), tf.int32)
-        output, _, _ = tf.nn.bidirectional_rnn(fw_cell, bw_cell,
-                                               tf.unpack(tf.transpose(self.input_data, perm=[1, 0, 2])),
+        print(self.input_data.shape)
+        check = tf.transpose(self.input_data, perm=[1, 0, 2])
+        print(check.shape)
+        #output, _, _ = tf.nn.bidirectional_rnn(fw_cell, bw_cell,
+        #                                       tf.unpack(tf.transpose(self.input_data, perm=[1, 0, 2])),
+        #                                       dtype=tf.float32, sequence_length=self.length)
+        (output, _) = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell,
+                                               self.input_data,
                                                dtype=tf.float32, sequence_length=self.length)
+        out_fw, out_bw = output
+        print(out_fw.shape)
+        print(out_bw.shape)
+        output = tf.concat([out_fw, out_bw], axis=-1)
+        print(output.shape)
+        
         weight, bias = self.weight_and_bias(2 * args.rnn_size, args.class_size)
-        output = tf.reshape(tf.transpose(tf.pack(output), perm=[1, 0, 2]), [-1, 2 * args.rnn_size])
+        print(weight.shape)
+        print(bias.shape)
+        #output = tf.reshape(tf.transpose(tf.pack(output), perm=[1, 0, 2]), [-1, 2 * args.rnn_size])
+        #output = tf.reshape(tf.transpose(tf.stack(output), perm=[1, 0, 2]), [-1, 2 * args.rnn_size])
+        output = tf.reshape(output, [-1, 2 * args.rnn_size])
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
+        print(prediction.shape)
         self.prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
+        print(self.prediction.shape)
         self.loss = self.cost()
         optimizer = tf.train.AdamOptimizer(0.003)
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars), 10)
         self.train_op = optimizer.apply_gradients(zip(grads, tvars))
+
+    def lstm_cell(self):
+        cell = tf.nn.rnn_cell.LSTMCell(self.args.rnn_size)
+        cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=0.5)
+        return cell
 
     def cost(self):
         cross_entropy = self.output_data * tf.log(self.prediction)
@@ -79,12 +102,15 @@ def f1(args, prediction, target, length):
 
 def train(args):
     train_inp, train_out = get_train_data()
+    print(np.array(train_inp[0]).shape)
+    print(np.array(train_out[0]).shape)
     test_a_inp, test_a_out = get_test_a_data()
     test_b_inp, test_b_out = get_test_b_data()
     model = Model(args)
     maximum = 0
     with tf.Session() as sess:
-        sess.run(tf.initialize_all_variables())
+        #sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
         if args.restore is not None:
             saver.restore(sess, 'model.ckpt')
@@ -94,7 +120,7 @@ def train(args):
                 sess.run(model.train_op, {model.input_data: train_inp[ptr:ptr + args.batch_size],
                                           model.output_data: train_out[ptr:ptr + args.batch_size]})
             if e % 10 == 0:
-                save_path = saver.save(sess, "model.ckpt")
+                save_path = saver.save(sess, "output/model.ckpt")
                 print("model saved in file: %s" % save_path)
             pred, length = sess.run([model.prediction, model.length], {model.input_data: test_a_inp,
                                                                        model.output_data: test_a_out})
@@ -103,7 +129,7 @@ def train(args):
             m = f1(args, pred, test_a_out, length)
             if m > maximum:
                 maximum = m
-                save_path = saver.save(sess, "model_max.ckpt")
+                save_path = saver.save(sess, "output/model_max.ckpt")
                 print("max model saved in file: %s" % save_path)
                 pred, length = sess.run([model.prediction, model.length], {model.input_data: test_b_inp,
                                                                            model.output_data: test_b_out})
